@@ -291,7 +291,7 @@ public class KinematicsStreamingToolboxParameters
       centerOfMassHoldWeight = 0.001;
       publishingSolutionPeriod = UnitConversions.hertzToSeconds(60.0);
       holdArmWeight = 10.0;
-      holdNeckWeight = 10.0;
+      holdNeckWeight = 0.5;
       holdPelvisLinearWeight.set(2.5, 2.5, 2.5);
       holdPelvisAngularWeight.set(1.0, 1.0, 1.0);
       holdChestAngularWeight.set(0.75, 0.75, 0.75);

@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class ToolboxModule implements CloseableAndDisposable
 {
-   protected static final boolean DEBUG = false;
+   protected static final boolean DEBUG = true;
    protected static final double YO_VARIABLE_SERVER_DT = 0.01;
    protected static final int DEFAULT_UPDATE_PERIOD_MILLISECONDS = 1;
 
@@ -62,7 +62,7 @@ public abstract class ToolboxModule implements CloseableAndDisposable
    protected final FullHumanoidRobotModel fullRobotModel;
 
    private final boolean manageROS2Node;
-   private final ROS2Node ros2Node;
+   protected final ROS2Node ros2Node;
    protected final CommandInputManager commandInputManager;
    protected final StatusMessageOutputManager statusOutputManager;
    protected final ControllerNetworkSubscriber controllerNetworkSubscriber;
@@ -480,8 +480,8 @@ public abstract class ToolboxModule implements CloseableAndDisposable
 
             if (receivedInput.getAndSet(false))
                timeOfLastInput.set(yoTime.getDoubleValue());
-            if (yoTime.getDoubleValue() - timeOfLastInput.getDoubleValue() >= timeWithoutInputsBeforeGoingToSleep.getDoubleValue())
-               sleep();
+//            if (yoTime.getDoubleValue() - timeOfLastInput.getDoubleValue() >= timeWithoutInputsBeforeGoingToSleep.getDoubleValue())
+//               sleep();
             else if (getToolboxController().isDone())
                sleep();
          }
