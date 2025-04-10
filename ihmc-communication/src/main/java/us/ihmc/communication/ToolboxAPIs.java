@@ -17,6 +17,7 @@ public final class ToolboxAPIs
    public static final String EXTERNAL_FORCE_ESTIMATION_TOOLBOX_MODULE_NAME = "toolbox/external_force_estimation";
    public static final String STEP_TELEOP_TOOLBOX_MODULE_NAME = "toolbox/teleop/step_teleop";
    public static final String DIRECTIONAL_CONTROL_TOOLBOX_MODULE_NAME = "/toolbox/directional_control";
+   public static final String SKELETON_TRACKING_TOOLBOX_MODULE_NAME = "/toolbox/skeleton_tracking";
 
    public static final ROS2Topic<?> FOOTSTEP_POSTPROCESSING_TOOLBOX = ROS2Tools.IHMC_ROOT.withModule(FOOTSTEP_POSTPROCESSING_TOOLBOX_MODULE_NAME);
    public static final ROS2Topic<?> KINEMATICS_TOOLBOX = ROS2Tools.IHMC_ROOT.withModule(KINEMATICS_TOOLBOX_MODULE_NAME);
@@ -28,6 +29,7 @@ public final class ToolboxAPIs
    public static final ROS2Topic<?> EXTERNAL_FORCE_ESTIMATION_TOOLBOX = ROS2Tools.IHMC_ROOT.withModule(EXTERNAL_FORCE_ESTIMATION_TOOLBOX_MODULE_NAME);
    public static final ROS2Topic<?> STEP_TELEOP_TOOLBOX = ROS2Tools.IHMC_ROOT.withModule(STEP_TELEOP_TOOLBOX_MODULE_NAME);
    public static final ROS2Topic<?> DIRECTIONAL_CONTROL_TOOLBOX = ROS2Tools.IHMC_ROOT.withModule(DIRECTIONAL_CONTROL_TOOLBOX_MODULE_NAME);
+   public static final ROS2Topic<?> SKELETON_TRACKING_TOOLBOX = ROS2Tools.IHMC_ROOT.withModule(SKELETON_TRACKING_TOOLBOX_MODULE_NAME);
 
    public static ROS2Topic<WalkingControllerPreviewInputMessage> getControllerPreviewInputTopic(String robotName)
    {
