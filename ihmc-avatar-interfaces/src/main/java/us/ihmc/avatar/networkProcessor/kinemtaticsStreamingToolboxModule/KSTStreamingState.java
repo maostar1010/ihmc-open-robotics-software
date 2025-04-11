@@ -369,7 +369,8 @@ public class KSTStreamingState implements State
       }
 
       // TODO change to using mid-feet z-up frame for initializing pelvis and chest
-      lockPelvis.set(tools.getConfigurationCommand().isLockPelvis());
+//      lockPelvis.set(tools.getConfigurationCommand().isLockPelvis());
+      lockPelvis.set(true);
 
       // TODO Make it possible to lock/unlock pelvis/chest while streaming
       if (lockPelvis.getValue())
