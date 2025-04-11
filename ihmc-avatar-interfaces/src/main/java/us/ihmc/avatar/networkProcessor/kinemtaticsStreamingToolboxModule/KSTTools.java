@@ -246,6 +246,8 @@ public class KSTTools
       for (RobotSide robotSide : RobotSide.values)
       {
          areHandTaskspaceOutputsEnabled.get(robotSide).set(configurationCommand.isHandTaskspaceEnabled(robotSide));
+         areHandTaskspaceOutputsEnabled.get(robotSide).set(false);
+
          areArmJointspaceOutputsEnabled.get(robotSide).set(configurationCommand.isArmJointspaceEnabled(robotSide));
       }
 

@@ -397,6 +397,7 @@ public class KSTStreamingState implements State
       }
 
       lockChest.set(tools.getConfigurationCommand().isLockChest());
+      lockChest.set(true);
 
       if (lockChest.getValue())
       {
