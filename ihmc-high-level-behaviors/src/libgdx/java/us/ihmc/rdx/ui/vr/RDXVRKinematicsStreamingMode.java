@@ -121,7 +121,11 @@ public class RDXVRKinematicsStreamingMode
    private KinematicsRecordReplay kinematicsRecorder;
    private final SceneGraph sceneGraph;
    private final RDXVRContext vrContext;
+   private final ControllerStatusTracker controllerStatusTracker;
+   private final RDXManualFootstepPlacement footstepPlacer;
    private final RDXHandConfigurationManager handManager;
+   private boolean pausedForWalking = false;
+   private final SideDependentList<Float> gripButtonsValue = new SideDependentList<>();
    @Nullable
    private KinematicsStreamingToolboxModule toolbox;
    private final KinematicsToolboxConfigurationMessage ikSolverConfigurationMessage = new KinematicsToolboxConfigurationMessage();
@@ -157,6 +161,8 @@ public class RDXVRKinematicsStreamingMode
       this.retargetingParameters = retargetingParameters;
       this.sceneGraph = sceneGraph;
       this.vrContext = vrContext;
+      this.controllerStatusTracker = controllerStatusTracker;
+      this.footstepPlacer = footstepPlacer;
       this.handManager = handManager;
    }
 
@@ -212,6 +218,7 @@ public class RDXVRKinematicsStreamingMode
       {
          KinematicsStreamingToolboxParameters parameters = new KinematicsStreamingToolboxParameters();
          parameters.setDefault();
+
          parameters.setToolboxUpdatePeriod(0.003);
          parameters.setPublishingPeriod(0.006); // Publishing period in seconds.
          boolean usingRealtimePlugin = false;
@@ -250,13 +257,26 @@ public class RDXVRKinematicsStreamingMode
 
          parameters.getDefaultSolverConfiguration().setEnableJointVelocityLimits(true);
 
+         parameters.setOutputJointVelocityScale(0.35);
+         parameters.setOutputLPFBreakFrequency(5.0);
+         parameters.setCenterOfMassSafeMargin(0.05);
+
+         // Add safety parameters here
+         parameters.getDefaultConfiguration().setLockPelvis(true);
+         parameters.getDefaultConfiguration().setEnablePelvisTaskspace(false);
+
+         parameters.setDefaultAngularRateLimit(5.0);
+         parameters.setInputPoseLPFBreakFrequency(2.0);
+         parameters.setMinimizeAngularMomentum(true);
+         parameters.setMinimizeLinearMomentum(true);
+         parameters.setAngularMomentumWeight(0.25);
+         parameters.setLinearMomentumWeight(0.25);
+
          if (robotModel != null)
          {
             reduceElbowJointLimits(parameters, robotModel);
             parameters.setInitialConfigurationMap(createInitialConfiguration(robotModel));
          }
-
-         parameters.setUseStreamingPublisher(Boolean.parseBoolean(System.getProperty("use.streaming.publisher", "true")));
 
          boolean startYoVariableServer = true;
          toolbox = new KinematicsStreamingToolboxModule(robotModel, parameters, startYoVariableServer);
@@ -327,12 +347,6 @@ public class RDXVRKinematicsStreamingMode
                streamingDisabled.set();
          }
 
-         InputDigitalActionData bButton = controller.getBButtonActionData();
-         if (bButton.bChanged() && !bButton.bState())
-         {
-            ghostPreviewEnabled.set(!ghostPreviewEnabled.get());
-         }
-
          // NOTE: Implement hand open close for controller trigger button.
          InputDigitalActionData clickTriggerButton = controller.getClickTriggerActionData();
          if (clickTriggerButton.bChanged() && !clickTriggerButton.bState())
@@ -342,6 +356,8 @@ public class RDXVRKinematicsStreamingMode
 
          // Check if left joystick is pressed in order to trigger recording or replay of motion
          InputDigitalActionData leftJoystickButton = controller.getJoystickPressActionData();
+         gripButtonsValue.put(RobotSide.LEFT, controller.getGripActionData().x());
+
          kinematicsRecorder.processRecordReplayInput(leftJoystickButton);
          if (kinematicsRecorder.isReplayingEnabled().get())
             wakeUpToolbox();
@@ -371,6 +387,8 @@ public class RDXVRKinematicsStreamingMode
         { // do not want to close grippers while interacting with the panel
            performHandAction(RobotSide.RIGHT);
 
+           // TODO discuss and possibly remap to different button...
+
            //           double trajectoryTime = 1.5;
            //           GoHomeMessage homePelvis = new GoHomeMessage();
            //           homePelvis.setHumanoidBodyPart(GoHomeMessage.HUMANOID_BODY_PART_PELVIS);
@@ -388,6 +406,8 @@ public class RDXVRKinematicsStreamingMode
            //           pausedForWalking = false;
            //           reintializingToolbox = false;
         }
+
+         gripButtonsValue.put(RobotSide.RIGHT, controller.getGripActionData().x());
       });
 
       if ((enabled.get() || kinematicsRecorder.isReplaying()) && toolboxInputStreamRateLimiter.run(streamPeriod))
@@ -543,7 +563,8 @@ public class RDXVRKinematicsStreamingMode
             toolboxInputMessage.setStreamToController(streamToController.get());
          else
             toolboxInputMessage.setStreamToController(kinematicsRecorder.isReplaying());
-         ros2ControllerHelper.publish(KinematicsStreamingToolboxModule.getInputToolboxConfigurationTopic(syncedRobot.getRobotModel().getSimpleRobotName()), ikSolverConfigurationMessage);
+         if (robotModel.getSimpleRobotName().toLowerCase().contains("nadia"))
+            ros2ControllerHelper.publish(KinematicsStreamingToolboxModule.getInputToolboxConfigurationTopic(syncedRobot.getRobotModel().getSimpleRobotName()), ikSolverConfigurationMessage);
          ros2ControllerHelper.publish(KinematicsStreamingToolboxModule.getInputCommandTopic(syncedRobot.getRobotModel().getSimpleRobotName()), toolboxInputMessage);
          outputFrequencyPlot.recordEvent();
       }
@@ -773,12 +794,7 @@ public class RDXVRKinematicsStreamingMode
    {
       if (enabled)
       {
-         if (!this.enabled.get())
-            wakeUpToolbox();
-         else
-         {
-            reinitializeToolboxRobotConfiguration();
-         }
+         wakeUpToolbox();
          kinematicsRecorder.setReplay(false); // Check no concurrency replay and streaming
          initialPelvisFrame = null;
          initialChestFrame = null;
@@ -917,7 +933,7 @@ public class RDXVRKinematicsStreamingMode
     */
    private void performHandAction(RobotSide robotSide)
    {
-      if (handControlModes.get(robotSide) == RDXHandControlMode.GRIPPER)
+      if (handControlModes.get(robotSide) == RDXHandControlMode.GRIPPER && robotModel.getRobotVersion().hasSakeGripperJoints(robotSide))
       {
          publishHandCommand(robotSide);
       }
