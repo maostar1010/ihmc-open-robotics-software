@@ -5,6 +5,7 @@ import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.opencv.global.opencv_cudaimgproc;
 import org.bytedeco.opencv.global.opencv_imgproc;
 import org.bytedeco.opencv.opencv_core.GpuMat;
+import org.bytedeco.opencv.opencv_core.Mat;
 import perception_msgs.msg.dds.ImageMessage;
 import perception_msgs.msg.dds.SRTStreamStatus;
 import sensor_msgs.msg.dds.CameraInfo;
@@ -21,8 +22,7 @@ import us.ihmc.perception.tools.PerceptionMessageTools;
 import us.ihmc.ros2.ROS2Node;
 import us.ihmc.ros2.ROS2Topic;
 
-import static us.ihmc.perception.imageMessage.CompressionType.NVJPEG;
-import static us.ihmc.perception.imageMessage.CompressionType.ZSTD_NVJPEG_HYBRID;
+import static us.ihmc.perception.imageMessage.CompressionType.*;
 
 public class RawImagePublisher implements AutoCloseable
 {
@@ -85,38 +85,44 @@ public class RawImagePublisher implements AutoCloseable
       BytePointer compressedImage;
       CompressionType compressionType;
 
-      switch (imageToPublish.getPixelFormat())
-      {
-         case GRAY16: // Depth image -> compress using ZSTD nvJPEG hybrid compression
-            compressedImage = compressionTools.compressDepth(imageToCompress);
-            compressionType = ZSTD_NVJPEG_HYBRID;
-            break;
-         case BGRA8: // BGRA image -> convert to BGR, then compress using nvJPEG
-            GpuMat bgr8Image = new GpuMat();
-            opencv_cudaimgproc.cvtColor(imageToCompress, bgr8Image, opencv_imgproc.COLOR_BGRA2BGR);
-            imageToCompress = bgr8Image;
-         case BGR8: // BGR image -> compress using nvJPEG
-            compressedImage = new BytePointer(OpenCVTools.dataSize(imageToCompress));
-            jpegProcessor.encodeBGR(imageToCompress, compressedImage);
-            compressionType = NVJPEG;
-            break;
-         case RGBA8: // RGBA image -> convert to RGB, then compress using nvJPEG
-            GpuMat rgb8Image = new GpuMat();
-            opencv_cudaimgproc.cvtColor(imageToCompress, rgb8Image, opencv_imgproc.COLOR_RGBA2RGB);
-            imageToCompress = rgb8Image;
-         case RGB8: // RGB image -> compress using nvJPEG
-            compressedImage = new BytePointer(OpenCVTools.dataSize(imageToCompress));
-            jpegProcessor.encodeRGB(imageToCompress, compressedImage);
-            compressionType = NVJPEG;
-            break;
-         case GRAY8: // Black and white image -> compress using nvJPEG
-            compressedImage = new BytePointer(OpenCVTools.dataSize(imageToCompress));
-            jpegProcessor.encodeGray(imageToCompress, compressedImage);
-            compressionType = NVJPEG;
-            break;
-         default:
-            throw new NotImplementedException("Tomasz has not implemented the compression method for this pixel format yet.");
-      }
+      Mat download = new Mat();
+      imageToCompress.download(download);
+      compressedImage = download.data().limit(OpenCVTools.dataSize(download));
+      compressionType = UNCOMPRESSED;
+
+//
+//      switch (imageToPublish.getPixelFormat())
+//      {
+//         case GRAY16: // Depth image -> compress using ZSTD nvJPEG hybrid compression
+//            compressedImage = compressionTools.compressDepth(imageToCompress);
+//            compressionType = ZSTD_NVJPEG_HYBRID;
+//            break;
+//         case BGRA8: // BGRA image -> convert to BGR, then compress using nvJPEG
+//            GpuMat bgr8Image = new GpuMat();
+//            opencv_cudaimgproc.cvtColor(imageToCompress, bgr8Image, opencv_imgproc.COLOR_BGRA2BGR);
+//            imageToCompress = bgr8Image;
+//         case BGR8: // BGR image -> compress using nvJPEG
+//            compressedImage = new BytePointer(OpenCVTools.dataSize(imageToCompress));
+//            jpegProcessor.encodeBGR(imageToCompress, compressedImage);
+//            compressionType = NVJPEG;
+//            break;
+//         case RGBA8: // RGBA image -> convert to RGB, then compress using nvJPEG
+//            GpuMat rgb8Image = new GpuMat();
+//            opencv_cudaimgproc.cvtColor(imageToCompress, rgb8Image, opencv_imgproc.COLOR_RGBA2RGB);
+//            imageToCompress = rgb8Image;
+//         case RGB8: // RGB image -> compress using nvJPEG
+//            compressedImage = new BytePointer(OpenCVTools.dataSize(imageToCompress));
+//            jpegProcessor.encodeRGB(imageToCompress, compressedImage);
+//            compressionType = NVJPEG;
+//            break;
+//         case GRAY8: // Black and white image -> compress using nvJPEG
+//            compressedImage = new BytePointer(OpenCVTools.dataSize(imageToCompress));
+//            jpegProcessor.encodeGray(imageToCompress, compressedImage);
+//            compressionType = NVJPEG;
+//            break;
+//         default:
+//            throw new NotImplementedException("Tomasz has not implemented the compression method for this pixel format yet.");
+//      }
 
       // Pack the message and send it off
       PerceptionMessageTools.packImageMessage(imageToPublish, compressedImage, compressionType, imageMessage);

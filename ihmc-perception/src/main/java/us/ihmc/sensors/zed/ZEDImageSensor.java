@@ -44,7 +44,7 @@ public class ZEDImageSensor extends ImageSensor
 
    public static final int OUTPUT_IMAGE_COUNT = 3;
 
-   protected static final int CAMERA_FPS = 60;
+   protected static final int CAMERA_FPS = 15;
    private static final float MILLIMETER_TO_METERS = 0.001f;
 
    private final int cameraID;
