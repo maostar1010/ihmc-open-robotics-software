@@ -23,7 +23,6 @@ import us.ihmc.ros2.ROS2Node;
 import us.ihmc.ros2.ROS2Publisher;
 import us.ihmc.perception.heightMap.HeightMapData;
 import us.ihmc.perception.heightMap.HeightMapParameters;
-import us.ihmc.sensors.ImageSensor;
 
 public class RapidHeightMapThread extends RepeatingTaskThread
 {
@@ -32,27 +31,23 @@ public class RapidHeightMapThread extends RepeatingTaskThread
    private final RapidHeightMapManager heightMapManager;
    private final Object heightMapLock = new Object();
 
-   private final ImageSensor imageSensor;
    private final ReferenceFrame cameraFrame;
    private final ReferenceFrame zUpSensorFrame;
    private final HeightMapParameters heightMapParameters;
-   private final int depthImageKey;
    private final CUDACompressionTools cudaCompressionTools = new CUDACompressionTools();
    private final ROS2Publisher<ImageMessage> filteredDepthPublisher;
+   private final RawImageQueue rawImageQueue;
 
    public RapidHeightMapThread(ROS2Node ros2Node,
                                ROS2SyncedRobotModel syncedRobotModel,
                                RobotCollisionModel robotCollisionModel,
-                               ImageSensor imageSensor,
-                               int depthImageKey,
+                               RawImageQueue rawImageQueue,
                                ControllerFootstepQueueMonitor controllerFootstepQueueMonitor,
                                HeightMapParameters heightMapParameters,
                                DepthImageFilteringParameters depthImageFilteringParameters)
    {
-      super(imageSensor.getSensorName() + RapidHeightMapThread.class.getSimpleName());
-
-      this.imageSensor = imageSensor;
-      this.depthImageKey = depthImageKey;
+      super(RapidHeightMapThread.class.getSimpleName());
+      this.rawImageQueue = rawImageQueue;
       this.heightMapParameters = heightMapParameters;
 
       cameraFrame = syncedRobotModel.getReferenceFrames().getSteppingCameraFrame();
@@ -79,8 +74,7 @@ public class RapidHeightMapThread extends RepeatingTaskThread
    {
       try
       {
-         imageSensor.waitForGrab();
-         RawImage depthImage = imageSensor.getImage(depthImageKey);
+         RawImage depthImage = rawImageQueue.dequeue();
 
          // Get everything we need from the image
          GpuMat latestDepthImage = depthImage.getGpuImageMat();
