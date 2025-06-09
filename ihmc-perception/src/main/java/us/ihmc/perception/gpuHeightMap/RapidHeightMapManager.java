@@ -3,6 +3,7 @@ package us.ihmc.perception.gpuHeightMap;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.opencv.opencv_core.GpuMat;
 import org.bytedeco.opencv.opencv_core.Mat;
+import perception_msgs.msg.dds.GlobalMapTileMessage;
 import perception_msgs.msg.dds.HeightMapMessage;
 import us.ihmc.commons.thread.Notification;
 import us.ihmc.communication.PerceptionAPI;
@@ -12,14 +13,16 @@ import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.humanoidRobotics.communication.ControllerFootstepQueueMonitor;
 import us.ihmc.perception.camera.CameraIntrinsics;
+import us.ihmc.perception.globalHeightMap.GlobalHeightMap;
+import us.ihmc.perception.globalHeightMap.GlobalMapTile;
 import us.ihmc.perception.heightMap.HeightMapMessageTools;
-import us.ihmc.perception.tools.PerceptionDebugTools;
 import us.ihmc.ros2.ROS2Node;
 import us.ihmc.ros2.ROS2Publisher;
 import us.ihmc.perception.heightMap.HeightMapData;
 import us.ihmc.perception.heightMap.HeightMapParameters;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -39,11 +42,14 @@ public class RapidHeightMapManager
    private final RapidHeightMapDriftOffset rapidHeightMapDriftOffset;
 
    private final ROS2Publisher<HeightMapMessage> heightMapMessagePublisher;
+   private final ROS2Publisher<GlobalMapTileMessage> globalMapTileMessagePublisher;
    private final BytePointer compressedHeightMapPointer = new BytePointer();
    private final HeightMapData latestHeightMapData;
    private final HeightMapData latestTerrainHeightMapData;
    private final Point3D gridCellLocation = new Point3D();
    private long sequenceId = 0;
+
+   private final GlobalHeightMap globalHeightMap;
 
    public RapidHeightMapManager(ROS2Node ros2Node,
                                 ReferenceFrame leftFootSoleFrame,
@@ -61,6 +67,8 @@ public class RapidHeightMapManager
                                                      0.0,
                                                      0.0);
 
+      globalHeightMap = new GlobalHeightMap();
+
       footSoleFrames.add(leftFootSoleFrame);
       footSoleFrames.add(rightFootSoleFrame);
 
@@ -70,6 +78,7 @@ public class RapidHeightMapManager
 
       // We use a notification to only call resetting the height map in one place
       heightMapMessagePublisher = ros2Node.createPublisher(PerceptionAPI.HEIGHT_MAP_MESSAGE);
+      globalMapTileMessagePublisher = ros2Node.createPublisher(PerceptionAPI.GLOBAL_HEIGHT_MAP_TILE);
       ros2Node.createSubscription2(PerceptionAPI.RESET_HEIGHT_MAP, message -> resetHeightMapRequested.set());
       ros2Node.createSubscription2(PerceptionAPI.LOWER_HEIGHT_MAP_BACKDROP, message -> lowerHeightMapBackdropRequested.set());
    }
@@ -108,12 +117,37 @@ public class RapidHeightMapManager
                                                    (float) heightMapParameters.getCellSizeInMeters(),
                                                    heightMapParameters);
 
+      globalHeightMap.addHeightMap(latestHeightMapData);
+      publishGlobalHeightMapTile(globalMapTileMessagePublisher, globalHeightMap);
+
       HeightMapMessage heightMapMessage = new HeightMapMessage();
       HeightMapMessageTools.toMessage(latestHeightMapData, heightMapMessage);
       sequenceId++;
       heightMapMessage.setSequenceId(sequenceId);
       heightMapMessagePublisher.publish(heightMapMessage);
    }
+
+   private static void publishGlobalHeightMapTile(ROS2Publisher<GlobalMapTileMessage> publisher,
+                                                  GlobalHeightMap globalHeightMap)
+   {
+      // Get tiles (made out of modified cells) from the global height map class and publish them in a for loop
+      Collection<GlobalMapTile> modifiedCells = globalHeightMap.getModifiedMapTiles();
+      for (GlobalMapTile tile : modifiedCells)
+      {
+         GlobalMapTileMessage globalMapTileMessage = new GlobalMapTileMessage();
+         packGlobalMapTileMessage(globalMapTileMessage, tile);
+         publisher.publish(globalMapTileMessage);
+      }
+   }
+
+   private static void packGlobalMapTileMessage(GlobalMapTileMessage messageToPack, GlobalMapTile tile)
+   {
+      messageToPack.setCenterX(tile.getCenterX());
+      messageToPack.setCenterY(tile.getCenterY());
+      messageToPack.setHashCodeOfTile(tile.hashCode());
+      messageToPack.getHeightMap().set(HeightMapMessageTools.toMessage(tile));
+   }
+
 
    /**
     * Update the Height Map with the latest depth image from the sensor

@@ -181,6 +181,7 @@ public class RDXROS2HeightMapVisualizer extends RDXROS2MultiTopicVisualizer
       if (ImGui.collapsingHeader(labels.get("Visualization Options")))
       {
          ImGui.checkbox(labels.get("Enable Height Map Renderer"), enableHeightMapRenderer);
+         ImGui.checkbox(labels.get("Enable Global Map Renderer"), enableGlobalHeightMapVisualizer);
       }
       ImGui.unindent();
    }
