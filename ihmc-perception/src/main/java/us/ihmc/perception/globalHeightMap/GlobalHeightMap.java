@@ -1,9 +1,15 @@
 package us.ihmc.perception.globalHeightMap;
 
 import com.esotericsoftware.kryo.util.IntMap;
+import org.bytedeco.opencv.opencv_core.Mat;
+import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple2D.interfaces.Point2DReadOnly;
+import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.perception.heightMap.HeightMapData;
+import us.ihmc.perception.heightMap.HeightMapParameters;
+import us.ihmc.perception.heightMap.HeightMapTools;
 
+import java.nio.FloatBuffer;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -30,20 +36,35 @@ public class GlobalHeightMap
    }
 
    // Adds a local height map to the global height map.
-   public void addHeightMap(HeightMapData heightMapData)
+   public void addHeightMap(Mat heightMapMat,
+                            float widthInMeters,
+                            float cellSizeInMeters,
+                            Point3DReadOnly gridCenter,
+                            HeightMapParameters heightMapParameters)
    {
+      widthInMeters = (float) (Math.floor(widthInMeters / cellSizeInMeters) * cellSizeInMeters);
+      int centerIndex = HeightMapTools.computeCenterIndex(widthInMeters, cellSizeInMeters);
+      int cellsPerAxis = 2 * centerIndex + 1;
+      int totalCells = cellsPerAxis * cellsPerAxis;
+
       // Clear the set of modified cells before processing the new height map data
       modifiedCells.clear();
 
-      // Iterate over each occupied cell in the local height map
-      for (int occupiedCell = 0; occupiedCell < heightMapData.getNumberOfOccupiedCells(); occupiedCell++)
+      FloatBuffer floatBuffer = heightMapMat.createBuffer(); // or ByteBuffer -> FloatBuffer
+      // This is done for speed optimization
+      float[] heightsArray = new float[totalCells];
+      floatBuffer.get(heightsArray);
+
+      for (int i = 0; i < totalCells; ++i)
       {
-         double cellHeight = heightMapData.getHeight(occupiedCell);
+         int cellHeight = (int) ((heightsArray[i]));// + heightMapParameters.getHeightOffset()) * heightMapParameters.getHeightScaleFactor());
 
          // Get the height of the current occupied cell
-         Point2DReadOnly occupiedCellPosition = heightMapData.getCellPosition(occupiedCell);
+         Point2DReadOnly occupiedCellPosition = new Point2D(HeightMapTools.keyToXCoordinate(i, gridCenter.getX(), cellSizeInMeters, centerIndex),
+                                                            HeightMapTools.keyToYCoordinate(i, gridCenter.getY(), cellSizeInMeters, centerIndex));
+
          // Get or create the GlobalMapTile that contains the current cell
-         GlobalMapTile globalMapTile = getOrCreateDataContainingCell(occupiedCellPosition, heightMapData.getGridResolutionXY());
+         GlobalMapTile globalMapTile = getOrCreateDataContainingCell(occupiedCellPosition, cellSizeInMeters);
 
          if (Double.isNaN(globalMapTile.getEstimatedGroundHeight()))
          {
