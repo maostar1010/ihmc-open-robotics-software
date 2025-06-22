@@ -69,7 +69,7 @@ public class GlobalHeightMap
          }
 
          // Set the height of the cell within the global map tile
-         globalMapTile.setHeightAt(occupiedCellPosition.getY(), occupiedCellPosition.getX(), cellHeight);
+         globalMapTile.setHeightAt(occupiedCellPosition.getX(), occupiedCellPosition.getY(), cellHeight);
 
          modifiedCells.add(globalMapTile);
       }

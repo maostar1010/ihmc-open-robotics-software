@@ -92,11 +92,6 @@ public class RDXGridMapGraphic implements RenderableProvider
       IntToDoubleFunction heightProvider = (d) -> (double) heightMapMessage.getHeights().get(d);
       IntFunction<Integer> keyProvider = (d) -> heightMapMessage.getKeys().get(d);
 
-//      Mat heightMapMat = HeightMapMessageTools.unpackMessageToMat(heightMapMessage, new HeightMapParameters());
-//      PerceptionDebugTools.printMat("s", heightMapMat, 10);
-//      heightMapMat.close();
-
-
       generateMeshes(heightProvider,
                      keyProvider,
                      heightMapMessage.getHeights().size(),
