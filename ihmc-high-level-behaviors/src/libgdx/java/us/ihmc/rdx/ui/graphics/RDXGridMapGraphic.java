@@ -11,11 +11,15 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import net.mgsx.gltf.scene3d.attributes.PBRColorAttribute;
 import net.mgsx.gltf.scene3d.attributes.PBRTextureAttribute;
+import org.bytedeco.opencv.opencv_core.Mat;
 import org.lwjgl.opengl.GL41;
 import perception_msgs.msg.dds.HeightMapMessage;
 import us.ihmc.euclid.transform.RigidBodyTransform;
 import us.ihmc.euclid.tuple3D.Point3D;
 import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
+import us.ihmc.perception.heightMap.HeightMapMessageTools;
+import us.ihmc.perception.heightMap.HeightMapParameters;
+import us.ihmc.perception.tools.PerceptionDebugTools;
 import us.ihmc.rdx.mesh.RDXIDMappedColorFunction;
 import us.ihmc.rdx.mesh.RDXMultiColorMeshBuilder;
 import us.ihmc.perception.heightMap.HeightMapTools;
@@ -87,6 +91,11 @@ public class RDXGridMapGraphic implements RenderableProvider
    {
       IntToDoubleFunction heightProvider = (d) -> (double) heightMapMessage.getHeights().get(d);
       IntFunction<Integer> keyProvider = (d) -> heightMapMessage.getKeys().get(d);
+
+//      Mat heightMapMat = HeightMapMessageTools.unpackMessageToMat(heightMapMessage, new HeightMapParameters());
+//      PerceptionDebugTools.printMat("s", heightMapMat, 10);
+//      heightMapMat.close();
+
 
       generateMeshes(heightProvider,
                      keyProvider,

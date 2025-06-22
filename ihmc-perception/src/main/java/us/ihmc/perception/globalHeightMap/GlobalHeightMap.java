@@ -8,6 +8,7 @@ import us.ihmc.euclid.tuple3D.interfaces.Point3DReadOnly;
 import us.ihmc.perception.heightMap.HeightMapData;
 import us.ihmc.perception.heightMap.HeightMapParameters;
 import us.ihmc.perception.heightMap.HeightMapTools;
+import us.ihmc.perception.tools.PerceptionDebugTools;
 
 import java.nio.FloatBuffer;
 import java.util.Collection;
@@ -36,11 +37,7 @@ public class GlobalHeightMap
    }
 
    // Adds a local height map to the global height map.
-   public void addHeightMap(Mat heightMapMat,
-                            float widthInMeters,
-                            float cellSizeInMeters,
-                            Point3DReadOnly gridCenter,
-                            HeightMapParameters heightMapParameters)
+   public void addHeightMap(Mat heightMapMat, float widthInMeters, float cellSizeInMeters, Point3DReadOnly gridCenter, HeightMapParameters heightMapParameters)
    {
       widthInMeters = (float) (Math.floor(widthInMeters / cellSizeInMeters) * cellSizeInMeters);
       int centerIndex = HeightMapTools.computeCenterIndex(widthInMeters, cellSizeInMeters);
@@ -57,7 +54,7 @@ public class GlobalHeightMap
 
       for (int i = 0; i < totalCells; ++i)
       {
-         int cellHeight = (int) ((heightsArray[i]));// + heightMapParameters.getHeightOffset()) * heightMapParameters.getHeightScaleFactor());
+         float cellHeight = (heightsArray[i]);
 
          // Get the height of the current occupied cell
          Point2DReadOnly occupiedCellPosition = new Point2D(HeightMapTools.keyToXCoordinate(i, gridCenter.getX(), cellSizeInMeters, centerIndex),
@@ -72,7 +69,7 @@ public class GlobalHeightMap
          }
 
          // Set the height of the cell within the global map tile
-         globalMapTile.setHeightAt(occupiedCellPosition.getX(), occupiedCellPosition.getY(), cellHeight);
+         globalMapTile.setHeightAt(occupiedCellPosition.getY(), occupiedCellPosition.getX(), cellHeight);
 
          modifiedCells.add(globalMapTile);
       }
