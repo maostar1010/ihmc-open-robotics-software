@@ -10,6 +10,7 @@ import us.ihmc.humanoidRobotics.communication.kinematicsStreamingToolboxAPI.Kine
 import us.ihmc.humanoidRobotics.communication.kinematicsStreamingToolboxAPI.KinematicsStreamingToolboxInitialConfigurationCommand;
 import us.ihmc.humanoidRobotics.communication.kinematicsStreamingToolboxAPI.KinematicsStreamingToolboxInputCommand;
 import us.ihmc.robotModels.FullHumanoidRobotModel;
+import us.ihmc.robotModels.JointHashCodeResolver;
 import us.ihmc.robotModels.RigidBodyHashCodeResolver;
 import us.ihmc.sensorProcessing.frames.ReferenceFrameHashCodeResolver;
 import us.ihmc.sensorProcessing.frames.ReferenceFrames;
@@ -20,6 +21,7 @@ public class KinematicsStreamingToolboxCommandConverter implements CommandConver
 
    private final RigidBodyHashCodeResolver desiredRigidBodyHashCodeResolver;
    private final ReferenceFrameHashCodeResolver desiredReferenceFrameHashCodeResolver;
+   private final JointHashCodeResolver jointHashCodeResolver;
 
    public KinematicsStreamingToolboxCommandConverter(FullHumanoidRobotModel currentFullRobotModel,
                                                      ReferenceFrames currentReferenceFrames,
@@ -30,6 +32,7 @@ public class KinematicsStreamingToolboxCommandConverter implements CommandConver
 
       desiredRigidBodyHashCodeResolver = new RigidBodyHashCodeResolver(desiredFullRobotModel);
       desiredReferenceFrameHashCodeResolver = new ReferenceFrameHashCodeResolver(desiredFullRobotModel, desiredReferenceFrames);
+      jointHashCodeResolver  = new JointHashCodeResolver(desiredFullRobotModel);
    }
 
    @Override
