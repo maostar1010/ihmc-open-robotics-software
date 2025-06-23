@@ -11,6 +11,7 @@ import controller_msgs.msg.dds.RobotConfigurationData;
 import controller_msgs.msg.dds.WholeBodyStreamingMessage;
 import controller_msgs.msg.dds.WholeBodyTrajectoryMessage;
 import toolbox_msgs.msg.dds.KinematicsStreamingToolboxConfigurationMessage;
+import toolbox_msgs.msg.dds.KinematicsStreamingToolboxInitialConfigurationMessage;
 import toolbox_msgs.msg.dds.KinematicsStreamingToolboxInputMessage;
 import toolbox_msgs.msg.dds.KinematicsToolboxConfigurationMessage;
 import toolbox_msgs.msg.dds.KinematicsToolboxOutputStatus;
@@ -203,6 +204,11 @@ public class KinematicsStreamingToolboxModule extends ToolboxModule
    public static ROS2Topic<KinematicsToolboxConfigurationMessage> getInputToolboxConfigurationTopic(String robotName)
    {
       return getInputTopic(robotName).withTypeName(KinematicsToolboxConfigurationMessage.class);
+   }
+
+   public static ROS2Topic<KinematicsStreamingToolboxInitialConfigurationMessage> getInputStreamingInitialConfigurationTopic(String robotName)
+   {
+      return getInputTopic(robotName).withTypeName(KinematicsStreamingToolboxInitialConfigurationMessage.class);
    }
 
    public static ROS2Topic<KinematicsToolboxOutputStatus> getOutputStatusTopic(String robotName)

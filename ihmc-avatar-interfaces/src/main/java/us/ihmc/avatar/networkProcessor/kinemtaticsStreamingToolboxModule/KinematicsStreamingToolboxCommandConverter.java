@@ -1,11 +1,13 @@
 package us.ihmc.avatar.networkProcessor.kinemtaticsStreamingToolboxModule;
 
 import toolbox_msgs.msg.dds.KinematicsStreamingToolboxConfigurationMessage;
+import toolbox_msgs.msg.dds.KinematicsStreamingToolboxInitialConfigurationMessage;
 import toolbox_msgs.msg.dds.KinematicsStreamingToolboxInputMessage;
 import us.ihmc.communication.controllerAPI.CommandConversionInterface;
 import us.ihmc.communication.controllerAPI.command.Command;
 import us.ihmc.euclid.interfaces.Settable;
 import us.ihmc.humanoidRobotics.communication.kinematicsStreamingToolboxAPI.KinematicsStreamingToolboxConfigurationCommand;
+import us.ihmc.humanoidRobotics.communication.kinematicsStreamingToolboxAPI.KinematicsStreamingToolboxInitialConfigurationCommand;
 import us.ihmc.humanoidRobotics.communication.kinematicsStreamingToolboxAPI.KinematicsStreamingToolboxInputCommand;
 import us.ihmc.robotModels.FullHumanoidRobotModel;
 import us.ihmc.robotModels.RigidBodyHashCodeResolver;
@@ -33,7 +35,9 @@ public class KinematicsStreamingToolboxCommandConverter implements CommandConver
    @Override
    public <C extends Command<?, M>, M extends Settable<M>> boolean isConvertible(C command, M message)
    {
-      return message instanceof KinematicsStreamingToolboxInputMessage || message instanceof KinematicsStreamingToolboxConfigurationMessage;
+      return message instanceof KinematicsStreamingToolboxInputMessage ||
+             message instanceof KinematicsStreamingToolboxConfigurationMessage ||
+             message instanceof KinematicsStreamingToolboxInitialConfigurationMessage;
    }
 
    @Override
@@ -45,6 +49,12 @@ public class KinematicsStreamingToolboxCommandConverter implements CommandConver
          KinematicsStreamingToolboxInputMessage inputMessage = (KinematicsStreamingToolboxInputMessage) message;
          inputCommand.set(inputMessage, desiredRigidBodyHashCodeResolver, desiredReferenceFrameHashCodeResolver);
       }
+      else if (message instanceof KinematicsStreamingToolboxInitialConfigurationMessage initialConfMessage)
+      {
+         KinematicsStreamingToolboxInitialConfigurationCommand initialConfCommand = (KinematicsStreamingToolboxInitialConfigurationCommand) command;
+         initialConfCommand.set(initialConfMessage, jointHashCodeResolver);
+      }
+
       else
       {
          KinematicsStreamingToolboxConfigurationCommand inputCommand = (KinematicsStreamingToolboxConfigurationCommand) command;
